@@ -53,10 +53,10 @@ activated_channels = []
 
 @client.event
 async def on_connect():
-    #if client.user.id == 1289280100956635209:
-    #    client.testing = False
-    #elif client.user.id == 1289280100956635209:
-    client.testing = True
+    if client.user.id == 1289280100956635209:
+        client.testing = False
+    elif client.user.id == 1291807442942034093:
+        client.testing = True
 
     global debug_channel_id
     
@@ -928,16 +928,21 @@ def GetPage(page, guild, user, models, uservoices, guildvoices, rawuser, rawguil
         ]
 
     }
+    admin = False
 
     if not rawguild:
         pages.pop("Server")
         pages.pop("Server (cont.)")
         pages.pop("Admin")
 
-    if rawguild and guild.get("settings", {}).get("admin_roles", []) and not rawuser.guild_permissions.manage_guild:
+    elif rawguild and guild.get("settings", {}).get("admin_roles", []) and not rawuser.guild_permissions.manage_guild:
         for i in guild.get("settings", {}).get("admin_roles", []):
             if i not in [i.id for i in rawuser.roles]:
-                pages.pop("Server")
+                admin = True
+                break
+        if not admin:
+            pages.pop("Server")
+            pages.pop("Server (cont.)")
 
     if guild:
         if not rawuser.guild_permissions.manage_guild:
@@ -1028,19 +1033,26 @@ class SettingsView(ui.View):
         #selects
         pagelist = ["Server", "Server (cont.)", "Admin", "User"]
 
+        admin = False
+
         if not rawguild:
             pagename = "User"
             del pagelist[0]
             del pagelist[0]
             del pagelist[0]
 
+
+
         elif guild.get("settings", {}).get("admin_roles", []) and not rawuser.guild_permissions.manage_guild:
             for i in guild.get("settings", {}).get("admin_roles", []):
-                if i not in [i.id for i in rawuser.roles]:
-                    pagename = "User"
-                    del pagelist[0]
-                    del pagelist[0]
-                    del pagelist[0]
+                if i in [i.id for i in rawuser.roles]:
+                    admin = True
+                    break
+            if not admin:
+                pagename = "User"
+                del pagelist[0]
+                del pagelist[0]
+                del pagelist[0]
 
         elif not rawuser.guild_permissions.manage_guild:
             del pagelist[2]
