@@ -1118,6 +1118,9 @@ async def join(interaction: discord.Interaction):
     else:
         await interaction.response.send_message("Stop your wizardry...", ephemeral=True)
         return
+    if not interaction.user.voice:
+        await interaction.response.send_message(embed=ErrorEmbed("You are not in a voice channel.", interaction.id, interaction.user.id, "join"), ephemeral=True)
+        return
     voice_channel = interaction.user.voice.channel
     vc = await voice_channel.connect()
     connected_vcs[interaction.guild.id] = vc
@@ -1127,8 +1130,11 @@ async def join(interaction: discord.Interaction):
 @app_commands.guild_install()
 async def leave(interaction: discord.Interaction):
     await Analytics(interaction)
+    if not interaction.user.voice:
+        await interaction.response.send_message(embed=ErrorEmbed("You are not in a voice channel.", interaction.id, interaction.user.id, "join"), ephemeral=True)
+        return
     if interaction.guild.id not in connected_vcs:
-        await interaction.response.send_message("Not in a voice channel!", ephemeral=True)
+        await interaction.response.send_message(embed=ErrorEmbed("I am not in a voice channel.", interaction.id, interaction.user.id, "join"), ephemeral=True)
         return
     await interaction.response.send_message("Leaving your voice channel...", ephemeral=True)
     vc = connected_vcs[interaction.guild.id]
