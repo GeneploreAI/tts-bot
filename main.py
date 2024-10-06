@@ -1111,10 +1111,13 @@ vc_queue = {}
 @app_commands.guild_install()
 async def join(interaction: discord.Interaction):
     await Analytics(interaction)
-    if interaction.guild.id in connected_vcs:
-        await interaction.response.send_message("Already in a voice channel!", ephemeral=True)
+    if interaction.guild:
+        if interaction.guild.id in connected_vcs:
+            await interaction.response.send_message("Already in a voice channel!", ephemeral=True)
+            return
+    else:
+        await interaction.response.send_message("Stop your wizardry...", ephemeral=True)
         return
-    await interaction.response.send_message("Joining your voice channel...", ephemeral=True)
     voice_channel = interaction.user.voice.channel
     vc = await voice_channel.connect()
     connected_vcs[interaction.guild.id] = vc
