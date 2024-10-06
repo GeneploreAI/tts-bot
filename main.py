@@ -238,10 +238,13 @@ class ListentoPremiumTTSButton(ui.Button):
         view.message = botmessage
 
 class PremiumView(ui.View):
-    def __init__(self):
+    def __init__(self, ispremium = False):
         super().__init__(timeout=None)
-        self.add_item(PremiumButton())
-        self.add_item(ListentoPremiumTTSButton())
+        if not ispremium:
+            self.add_item(PremiumButton())
+            self.add_item(ListentoPremiumTTSButton())
+        else:
+            self.add_item(ui.Button(style=discord.ButtonStyle.gray, label="Sorry for the interruption!", disabled=True))
   
         
 @tree.command(name="help", description="Get help with TTS.")
@@ -315,8 +318,11 @@ def GetPremiumEmbed():
     embed.set_thumbnail(url="https://geneplo.re/static/hosted/bot-img/TTS.png")
     return embed
 
-def GetDailyLimitEmbed(delta):
-    embed = discord.Embed(title="Daily limit reached.", description=f"You have reached your daily limit. Subscribe to TTS Premium for higher limits or wait {delta} for a refill.", color=discord.Color.red())
+def GetDailyLimitEmbed(delta, ispremium = False):
+    if ispremium:
+        embed = discord.Embed(title="Daily limit reached.", description=f"You have reached your daily limit. Wait {delta} for your limit to reset.", color=discord.Color.red())
+    else:
+        embed = discord.Embed(title="Daily limit reached.", description=f"You have reached your daily limit. Subscribe to TTS Premium for higher limits or wait {delta} for a refill.", color=discord.Color.red())
     embed.set_thumbnail(url="https://geneplo.re/static/hosted/bot-img/TTS.png")
     return embed
 
@@ -385,22 +391,28 @@ async def RunTTS(prompt: str, interaction: discord.Interaction | discord.Message
         refilltime = "<t:" + str(math.ceil(datetime.datetime.timestamp(NextMidnight()))) + ":R>"
     
 
+    premium = await PremiumCheck(rawuser, rawguild)
+    if premium:
+        ispremium = False
+    else:
+        ispremium = True
+        
+    dbmodel = await db.models.find_one({"name": model})
+    if dbmodel["is_premium"]:
+        if not ispremium:
+            return premium
 
     if not guild:
         if user.get("daily_usage", 0) > user.get("daily_limit", 500):
-            return GetDailyLimitEmbed(refilltime), PremiumView()
+            return GetDailyLimitEmbed(refilltime, ispremium=ispremium), PremiumView(ispremium=ispremium)
     else:
         if guild.get("daily_usage", 0) > guild.get("daily_limit", 2500):
-            return GetDailyLimitEmbed(refilltime), PremiumView()
+            return GetDailyLimitEmbed(refilltime, ispremium=ispremium), PremiumView(ispremium=ispremium)
 
     if not isinstance(session, aiohttp.ClientSession):
         session = aiohttp.ClientSession()
 
-    dbmodel = await db.models.find_one({"name": model})
-    if dbmodel["is_premium"]:
-        premium = await PremiumCheck(rawuser, rawguild)
-        if premium:
-            return premium
+
 
     if model in ["tts-1", "tts-1-hd"]:
 
