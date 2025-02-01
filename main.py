@@ -1111,21 +1111,31 @@ vc_queue = {}
 @app_commands.guild_install()
 async def join(interaction: discord.Interaction):
     await Analytics(interaction)
-    if interaction.guild.id in connected_vcs:
-        await interaction.response.send_message("Already in a voice channel!", ephemeral=True)
+    if interaction.guild:
+        if interaction.guild.id in connected_vcs:
+            await interaction.response.send_message("Already in a voice channel!", ephemeral=True)
+            return
+    else:
+        await interaction.response.send_message("Stop your wizardry...", ephemeral=True)
         return
-    await interaction.response.send_message("Joining your voice channel...", ephemeral=True)
+    if not interaction.user.voice:
+        await interaction.response.send_message(embed=ErrorEmbed("You are not in a voice channel.", interaction.id, interaction.user.id, "join"), ephemeral=True)
+        return
     voice_channel = interaction.user.voice.channel
     vc = await voice_channel.connect()
     connected_vcs[interaction.guild.id] = vc
+    await interaction.response.send_message("Joined your voice channel!", ephemeral=True)
 
 @tree.command(name="leave", description="Leave your voice channel.")
 @app_commands.allowed_contexts(guilds=True, dms=False, private_channels=False)
 @app_commands.guild_install()
 async def leave(interaction: discord.Interaction):
     await Analytics(interaction)
+    if not interaction.user.voice:
+        await interaction.response.send_message(embed=ErrorEmbed("You are not in a voice channel.", interaction.id, interaction.user.id, "join"), ephemeral=True)
+        return
     if interaction.guild.id not in connected_vcs:
-        await interaction.response.send_message("Not in a voice channel!", ephemeral=True)
+        await interaction.response.send_message(embed=ErrorEmbed("I am not in a voice channel.", interaction.id, interaction.user.id, "join"), ephemeral=True)
         return
     await interaction.response.send_message("Leaving your voice channel...", ephemeral=True)
     vc = connected_vcs[interaction.guild.id]
