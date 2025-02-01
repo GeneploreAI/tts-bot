@@ -1124,6 +1124,7 @@ async def join(interaction: discord.Interaction):
     voice_channel = interaction.user.voice.channel
     vc = await voice_channel.connect()
     connected_vcs[interaction.guild.id] = vc
+    await interaction.response.send_message("Joined your voice channel!", ephemeral=True)
 
 @tree.command(name="leave", description="Leave your voice channel.")
 @app_commands.allowed_contexts(guilds=True, dms=False, private_channels=False)
